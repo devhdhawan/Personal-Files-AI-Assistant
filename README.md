@@ -1,44 +1,54 @@
 
 # Personal Files AI Assistant
 
-A local, privacy-first AI assistant that answers questions using only your personal tech notes (Python, Java, SQL, PySpark, Kafka) stored in ChromaDB, exposed via an MCP server and queried by a Gemini-based chat client.
+A local, privacy-first AI assistant that answers questions using only your own documents stored in a `data/` folder and indexed in ChromaDB.  
+The assistant runs as an MCP server and is queried by a Gemini-based chat client.
 
 ---
 
 ## Project Structure
 
-- `data/`
-  - `python.txt`
-  - `java.txt`
-  - `sql.txt`
-  - `pyspark.txt`
-  - `kafka.txt`
-- `chroma_db/`
-  - Persistent ChromaDB storage (created at runtime)
-- `src/`
-  - `chromaDB.py` – MCP server exposing the `searchdocument` tool backed by ChromaDB.
-  - `browser_mcp.json` – MCP server configuration for the client.
-- `main.py` – Chat client using `MCPAgent` + Gemini to talk to the MCP server.
+- `data/`  
+  Folder containing your source documents (for example, `notes-python.txt`, `project-specs.txt`, `kafka-guide.txt`).  
+  Every `.txt` file in this folder is loaded, chunked, and indexed into ChromaDB.
+
+- `chroma_db/`  
+  Persistent ChromaDB storage (created at runtime).
+
+- `src/`  
+  - `chromaDB.py` – MCP server exposing a `searchdocument` tool backed by ChromaDB; handles:
+    - Loading all files from `data/`.
+    - Splitting them into chunks.
+    - Storing/retrieving embeddings from ChromaDB.
+  - `browser_mcp.json` – MCP server configuration used by the client to start/connect to the MCP server.
+
+- `main.py` – Chat client using `MCPAgent` + Gemini to talk to the MCP server and answer from retrieved chunks.
+
 - `.env` – Environment variables (for example, `GOOGLE_API_KEY`).
+
 - `pyproject.toml`, `requirements.txt`, `uv.lock` – Dependency and environment management files.
 
 ---
 
 ## Features
 
-- Ingests notes from `data/*.txt` and stores chunked embeddings in ChromaDB collections.
-- Provides a `searchdocument` MCP tool that:
-  - Searches across `python_docs`, `java_docs`, `sql_docs`, `pyspark_docs`, `kafka_docs` collections.
-  - Restricts questions to these topics using an `allowedterms` check.
+- Automatically scans the `data/` directory, reads each file, and splits content into chunks with `RecursiveCharacterTextSplitter`.
+- Stores all chunks in a persistent ChromaDB instance under per-file collections (for example, one collection per source name).
+- Exposes a single MCP tool `searchdocument` that:
+  - Accepts a natural-language query.
+  - Queries across all indexed collections for the most relevant chunks.
+  - Returns the best-matching document snippets to the client.
 - Chat client (`main.py`) uses Gemini (`gemini-2.5-flash`) with MCPAgent to:
-  - Call `searchdocument` for each query.
-  - Answer using only retrieved local documents, not general model knowledge.
+  - Call `searchdocument` for each user query.
+  - Generate answers using only the retrieved local document snippets.
+
+> Note: The example code currently includes an `allowedterms` list that was tuned for tech topics; you can keep, remove, or customize that restriction depending on your use case.
 
 ---
 
 ## Prerequisites
 
-- Python (managed with `uv`, since commands use `uv run`).
+- Python (project uses `uv run` for commands).
 - Google API key with access to Gemini models.
 - `uv` installed globally.
 - Ability to install dependencies from `requirements.txt` / `pyproject.toml`.
@@ -47,21 +57,25 @@ A local, privacy-first AI assistant that answers questions using only your perso
 
 ## Setup
 
-1. **Clone the repository** and open it in your editor (for example, VS Code).
+1. **Clone the repository** and open it in your editor.
+
 2. **Create a `.env` file** in the project root:
 ```
 
 GOOGLE_API_KEY=your_api_key_here
 
 ```
+
 3. **Install dependencies** with `uv`:
 ```
 
 uv sync
 
 ```
-4. **Fill your data files**  
-Edit the text files in `data/` (`python.txt`, `java.txt`, `sql.txt`, `pyspark.txt`, `kafka.txt`) with your own notes.
+
+4. **Add your documents**  
+Place any `.txt` files you want the assistant to use inside the `data/` directory.  
+These can be notes, specs, guides, or any other plain-text documents.
 
 ---
 
@@ -78,13 +92,9 @@ uv run --with mcp[cli] mcp run "src/chromaDB.py"
 On startup you should see:
 
 - Chroma telemetry logs.
-- A line showing loaded collections, for example:
-```
+- A list of collection names corresponding to your files (for example, `['notes-python_docs', 'project-specs_docs', ...]`).
 
-['java_docs', 'kafka_docs', 'pyspark_docs', 'python_docs', 'sql_docs']
-
-```
-The process stays running because `mcp.run(transport="stdio")` blocks in `if __name__ == "__main__":`.
+The process remains running because `mcp.run(transport="stdio")` blocks inside `if __name__ == "__main__":`.
 
 ---
 
@@ -104,7 +114,7 @@ The process stays running because `mcp.run(transport="stdio")` blocks in `if __n
 "mcp[cli]",
 "mcp",
 "run",
-"src/chromaDB.py"
+"C:/Users/your-user/path/to/Personal-Files-AI-Assistant/src/chromaDB.py"
 ]
 }
 }
@@ -113,13 +123,13 @@ The process stays running because `mcp.run(transport="stdio")` blocks in `if __n
 ```
 
 - Tells the MCP client how to start/connect to the `PersonalFileAssistant` server.
-- Update the path if you move the project or run on another machine.
+- Update the path to match your local project location.
 
 ---
 
 ## Running the Chat Client
 
-With the MCP server already running, in a second terminal from the project root:
+With the MCP server running, in a second terminal from the project root:
 
 ```
 
@@ -136,36 +146,37 @@ You:
 
 ```
 
-Example queries:
+Ask questions whose answers are contained in your documents, for example:
 
-- `What is Python?`
-- `Explain Kafka topics and partitions.`
-- `What is an SQL join?`
+- “Summarize my Kafka notes.”
+- “What steps are listed in the deployment checklist?”
+- “Explain the concept of X from my notes.”
 
 For each question, the agent will:
 
 1. Call `searchdocument` on the MCP server.
-2. Retrieve the most relevant chunk(s) from ChromaDB.
+2. Retrieve the most relevant chunks from all indexed collections.
 3. Generate an answer using only those retrieved chunks.
 
 ---
 
 ## Customization
 
-- Add more `.txt` files to `data/` and extend `allowedterms` / collection loading logic in `chromaDB.py` to support new topics.
-- Tune chunking via `RecursiveCharacterTextSplitter` (chunk size, overlap) in `chromaDB.py` for different document sizes.
-- Adjust LLM parameters (model name, temperature, `max_steps`) inside `main.py` to change answer style and tool-calling behavior.
+- **Document Types**: By default, the example ingests `.txt` files; you can extend the loader logic in `chromaDB.py` to support other formats (for example, Markdown or PDFs via additional loaders).
+- **Chunking**: Adjust `chunk_size` and `chunk_overlap` in `RecursiveCharacterTextSplitter` to better suit long or short documents.
+- **Retrieval Logic**: Modify how many results to return per collection (`n_results`), combine scores differently, or add filters by metadata.
+- **LLM Behavior**: Tune model, temperature, and `max_steps` in `main.py` for more concise, verbose, or strictly tool-following behavior.
 
 ---
 
 ## Troubleshooting
 
 - **Server exits immediately**
-  - Ensure `if __name__ == "__main__":` in `chromaDB.py` calls `mcp.run(transport="stdio")` and does not just run test functions.
+  - Ensure `if __name__ == "__main__":` in `chromaDB.py` calls `mcp.run(transport="stdio")` and does not only execute test calls.
 
-- **No answer or empty results**
-  - Confirm data files are non-empty and ingestion ran once.
-  - Add debug prints in `searchdocument` to log the query and the number of results before returning.
+- **No or poor answers**
+  - Confirm `data/` contains non-empty text files.
+  - Add debug prints in `searchdocument` to log incoming queries and the number of results before returning.
 
 - **Client cannot connect**
   - Verify the path in `browser_mcp.json`.

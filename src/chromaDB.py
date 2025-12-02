@@ -71,7 +71,7 @@ async def search_document(query: str):
     #     print("[search_document] blocked query:", query)
     #     return {"documents": [], "ids": [], "distances": []}
 
-    doc_lst = ["python_docs", "java_docs", "sql_docs", "pyspark_docs", "kafka_docs"]
+    
     distance = -1
     final_res = {}
 
@@ -90,7 +90,6 @@ async def search_document(query: str):
 
 
 if __name__ == "__main__":
-    print("searchdocument called with:", query)
-    # add_doc_to_chroma()
+    add_doc_to_chroma()
     mcp.run(transport="stdio")
     print("exit")
