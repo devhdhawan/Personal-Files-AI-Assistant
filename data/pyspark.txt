@@ -1,0 +1,33 @@
+PySpark Fundamentals:
+- Python API for Apache Spark
+- Enables distributed data processing
+- Handles big data processing with DataFrames and RDDs
+
+SparkSession:
+- Entry point for DataFrame API
+- from pyspark.sql import SparkSession
+- spark = SparkSession.builder.appName('app').getOrCreate()
+
+DataFrame Operations:
+- Reading: spark.read.csv('file.csv', header=True)
+- Transformations: filter, groupBy, join, select
+- Actions: show(), count(), collect(), write()
+
+RDD Basics:
+- Resilient Distributed Datasets
+- sc.parallelize(data) to create RDD
+- map, filter, reduce operations
+
+Key Features:
+- Lazy evaluation
+- Fault tolerance
+- In-memory computation
+
+Common Transformations:
+- map(func): applies function to each element
+- filter(condition): selects elements
+- groupByKey(), reduceByKey()
+
+Aggregations:
+- sum(), count(), avg(), min(), max()
+- window functions for advanced analytics

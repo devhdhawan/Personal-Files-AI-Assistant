@@ -1,0 +1,31 @@
+Apache Kafka Basics:
+- Distributed event streaming platform
+- Handles high-throughput, fault-tolerant messaging
+
+Core Concepts:
+- Topics: categories for messages
+- Partitions: ordered logs within topics
+- Brokers: Kafka servers
+
+Producers:
+- Publish messages to topics
+- Key-value pairs, serializers
+
+Consumers:
+- Subscribe to topics
+- Consumer groups for load balancing
+
+Key Components:
+- Zookeeper/KRaft for coordination
+- Replication for fault tolerance
+- Retention policies
+
+Kafka Streams:
+- Library for stream processing
+- KStream, KTable abstractions
+- Joins, aggregations, windowing
+
+Use Cases:
+- Real-time data pipelines
+- Log aggregation
+- Stream processing

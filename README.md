@@ -1,129 +1,174 @@
-# Smart Personal Knowledge Base Assistant
 
-A Model Context Protocol (MCP) server that provides AI assistants with access to a local knowledge base. This server enables AI agents to search, add, and manage documents in a vector database for efficient retrieval and context-aware responses. It can connect with different LLMs to provide intelligent document processing and retrieval capabilities.
+# Personal Files AI Assistant
+
+A local, privacy-first AI assistant that answers questions using only your personal tech notes (Python, Java, SQL, PySpark, Kafka) stored in ChromaDB, exposed via an MCP server and queried by a Gemini-based chat client.
+
+---
+
+## Project Structure
+
+- `data/`
+  - `python.txt`
+  - `java.txt`
+  - `sql.txt`
+  - `pyspark.txt`
+  - `kafka.txt`
+- `chroma_db/`
+  - Persistent ChromaDB storage (created at runtime)
+- `src/`
+  - `chromaDB.py` – MCP server exposing the `searchdocument` tool backed by ChromaDB.
+  - `browser_mcp.json` – MCP server configuration for the client.
+- `main.py` – Chat client using `MCPAgent` + Gemini to talk to the MCP server.
+- `.env` – Environment variables (for example, `GOOGLE_API_KEY`).
+- `pyproject.toml`, `requirements.txt`, `uv.lock` – Dependency and environment management files.
+
+---
 
 ## Features
 
-- **Document Search**: Semantic search across your knowledge base using vector embeddings
-- **Document Management**: Add and organize documents with metadata
-- **Document Summaries**: Get quick overviews of documents in the knowledge base
-- **RAG Integration**: Uses ChromaDB for efficient vector storage and retrieval
+- Ingests notes from `data/*.txt` and stores chunked embeddings in ChromaDB collections.
+- Provides a `searchdocument` MCP tool that:
+  - Searches across `python_docs`, `java_docs`, `sql_docs`, `pyspark_docs`, `kafka_docs` collections.
+  - Restricts questions to these topics using an `allowedterms` check.
+- Chat client (`main.py`) uses Gemini (`gemini-2.5-flash`) with MCPAgent to:
+  - Call `searchdocument` for each query.
+  - Answer using only retrieved local documents, not general model knowledge.
+
+---
 
 ## Prerequisites
 
-- Python 3.10 or higher
-- OpenAI API key (for embeddings)
+- Python (managed with `uv`, since commands use `uv run`).
+- Google API key with access to Gemini models.
+- `uv` installed globally.
+- Ability to install dependencies from `requirements.txt` / `pyproject.toml`.
 
-## Installation
+---
 
-1. Clone this repository
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Copy `.env.example` to `.env` and configure your settings:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your settings
-   ```
+## Setup
 
-## Usage
+1. **Clone the repository** and open it in your editor (for example, VS Code).
+2. **Create a `.env` file** in the project root:
+```
 
-1. What is OpenAI API key? Why is it needed?
-OpenAI API key is a secret token that lets your app access OpenAI’s cloud AI services (like GPT, embeddings, etc.).
-Why needed:
-In your project, you use OpenAI’s embedding models to convert text/documents into vectors for semantic search. The API key authenticates your requests and enables these features.
+GOOGLE_API_KEY=your_api_key_here
 
-2. What is STORAGE_PATH? Why is it needed?
-STORAGE_PATH is a configuration variable (from .env) that tells your server where to store and find your knowledge base (documents, notes, etc.).
-Why needed:
-It keeps your data organized and persistent.
-Example: If STORAGE_PATH=./knowledge_base, all files and vector databases are saved in the knowledge_base folder.
+```
+3. **Install dependencies** with `uv`:
+```
 
-3. What is LangChain? What is ChromaDB? (Detailed)
-LangChain
-LangChain is a Python library for building applications with language models (LLMs).
-Features:
-Loads documents in various formats (PDF, DOCX, TXT)
-Splits text into manageable chunks
-Integrates with vector stores and LLMs
-Chains together multiple AI operations (search, summarize, etc.)
-ChromaDB
-ChromaDB is an open-source vector database.
-Features:
-Stores vector embeddings of text/documents
-Enables fast similarity search (find documents similar to a query)
-Persistent storage (saves data between server restarts)
-Why used together:
-LangChain loads and processes documents, generates embeddings (with OpenAI), and stores them in ChromaDB for semantic search.
+uv sync
 
-4. Why did we choose FastAPI web server?
-FastAPI is a modern, fast Python web framework.
-Reasons for choice:
-High performance (async support)
-Automatic API docs (Swagger/OpenAPI)
-Easy endpoint definition with Python type hints
-Great for building APIs that interact with AI models and clients
+```
+4. **Fill your data files**  
+Edit the text files in `data/` (`python.txt`, `java.txt`, `sql.txt`, `pyspark.txt`, `kafka.txt`) with your own notes.
 
-5. Where do we load our documents/knowledge base?
-Documents are loaded from the folder specified by STORAGE_PATH (e.g., ./knowledge_base).
-The KnowledgeBase class in server.py uses LangChain’s loaders to read files from this directory, process them, and store their embeddings in ChromaDB.
+---
 
-6. Explain mcp.json in detail. How do we start the MCP server?
-mcp.json is a VS Code configuration file for MCP servers.
+## Running the MCP Server
 
-Purpose:
-Tells VS Code how to start your MCP server so AI clients can connect.
+From the project root:
 
-Example:
+```
+
+uv run --with mcp[cli] mcp run "src/chromaDB.py"
+
+```
+
+On startup you should see:
+
+- Chroma telemetry logs.
+- A line showing loaded collections, for example:
+```
+
+['java_docs', 'kafka_docs', 'pyspark_docs', 'python_docs', 'sql_docs']
+
+```
+The process stays running because `mcp.run(transport="stdio")` blocks in `if __name__ == "__main__":`.
+
+---
+
+## MCP Configuration (`browser_mcp.json`)
+
+`src/browser_mcp.json`:
+
+```
+
 {
-    "servers": {
-        "knowledge-base-server": {
-            "type": "stdio",
-            "command": "python",
-            "args": ["server.py"]
-        }
-    }
+"mcp_servers": {
+"PersonalFileAssistant": {
+"command": "uv",
+"args": [
+"run",
+"--with",
+"mcp[cli]",
+"mcp",
+"run",
+"src/chromaDB.py"
+]
+}
+}
 }
 
-"type": "stdio" means the server communicates over standard input/output.
-"command": "python" and "args": ["server.py"] tells VS Code to run your server with python server.py.
-How to start:
-In VS Code, you can use the MCP extension or run the command defined in mcp.json to start the server.
-
-7. What AI client do we choose? Can we add others?
-AI client chosen:
-You can use Claude Desktop, Cursor, or any MCP-compatible client.
-Can you add others?
-Yes! Any client that supports MCP protocol (JSON-RPC over stdio or HTTP) can connect.
-You can also write your own custom client in Python, TypeScript, etc.
-
-## Development
-
-### Project Structure
-
-```
-mcp-knowledge-base/
-├── server.py             # Main MCP server implementation
-├── requirements.txt      # Python dependencies
-├── .env                 # Configuration settings
-└── knowledge_base/      # Local storage for vector database
 ```
 
-### Adding New Features
+- Tells the MCP client how to start/connect to the `PersonalFileAssistant` server.
+- Update the path if you move the project or run on another machine.
 
-To add new tools or capabilities:
+---
 
-1. Add new methods to the `KnowledgeBaseServer` class
-2. Register them as tools using the `@app.tool()` decorator
-3. Update documentation as needed
+## Running the Chat Client
 
-## Security Notes
+With the MCP server already running, in a second terminal from the project root:
 
-- The server is designed for local use and requires proper configuration for production deployments
-- API keys should be kept secure and never committed to version control
-- Consider implementing authentication if deploying in a multi-user environment
+```
 
-=======
-# Smart-Personal-Knowledge-Base-Assistant
-Smart Personal Knowledge Base Assistant using MCP to connect with Different LLM's
+uv run main.py
+
+```
+
+You should see something like:
+
+```
+
+Chatbot initialized. Type 'exit' to quit.
+You:
+
+```
+
+Example queries:
+
+- `What is Python?`
+- `Explain Kafka topics and partitions.`
+- `What is an SQL join?`
+
+For each question, the agent will:
+
+1. Call `searchdocument` on the MCP server.
+2. Retrieve the most relevant chunk(s) from ChromaDB.
+3. Generate an answer using only those retrieved chunks.
+
+---
+
+## Customization
+
+- Add more `.txt` files to `data/` and extend `allowedterms` / collection loading logic in `chromaDB.py` to support new topics.
+- Tune chunking via `RecursiveCharacterTextSplitter` (chunk size, overlap) in `chromaDB.py` for different document sizes.
+- Adjust LLM parameters (model name, temperature, `max_steps`) inside `main.py` to change answer style and tool-calling behavior.
+
+---
+
+## Troubleshooting
+
+- **Server exits immediately**
+  - Ensure `if __name__ == "__main__":` in `chromaDB.py` calls `mcp.run(transport="stdio")` and does not just run test functions.
+
+- **No answer or empty results**
+  - Confirm data files are non-empty and ingestion ran once.
+  - Add debug prints in `searchdocument` to log the query and the number of results before returning.
+
+- **Client cannot connect**
+  - Verify the path in `browser_mcp.json`.
+  - Ensure the MCP server is running before starting `main.py`.
+
+

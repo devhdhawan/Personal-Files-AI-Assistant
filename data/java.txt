@@ -1,0 +1,32 @@
+Java Core Concepts:
+- Object-oriented, class-based language
+- Platform-independent via JVM
+- Strongly typed, compiled to bytecode
+
+Key Features:
+- Simple, secure, robust
+- Multithreading support
+- Automatic garbage collection
+
+OOP Principles:
+- Encapsulation: data hiding
+- Inheritance: extends keyword
+- Polymorphism: method overriding/overloading
+- Abstraction: abstract classes, interfaces
+
+Data Types:
+- Primitive: int, double, boolean, char
+- Reference: String, arrays, objects
+
+Control Flow:
+- if-else, switch
+- for, while, do-while loops
+
+Exception Handling:
+- try-catch-finally
+- throw, throws keywords
+
+Collections Framework:
+- List: ArrayList, LinkedList
+- Set: HashSet, TreeSet
+- Map: HashMap, TreeMap

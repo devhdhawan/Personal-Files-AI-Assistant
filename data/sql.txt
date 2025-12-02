@@ -1,0 +1,28 @@
+SQL Essentials:
+- Structured Query Language for database management
+- Standard for relational databases
+
+Basic Queries:
+SELECT * FROM table_name;
+SELECT column1, column2 FROM table_name WHERE condition;
+
+Data Manipulation:
+- INSERT INTO table (col1, col2) VALUES (val1, val2);
+- UPDATE table SET col1 = val1 WHERE condition;
+- DELETE FROM table WHERE condition;
+
+Aggregations:
+- COUNT(*), SUM(col), AVG(col), MIN(col), MAX(col)
+- GROUP BY col HAVING condition
+
+Joins:
+- INNER JOIN, LEFT JOIN, RIGHT JOIN, FULL OUTER JOIN
+- ON condition
+
+Sorting and Limiting:
+- ORDER BY col ASC/DESC
+- LIMIT n, OFFSET m
+
+DDL Commands:
+- CREATE TABLE, ALTER TABLE, DROP TABLE
+- CREATE INDEX, CREATE VIEW

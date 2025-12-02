@@ -1,0 +1,15 @@
+{
+    "mcp_servers": {
+     "PersonalFileAssistant": {
+         "command" : "uv",
+         "args" : [
+             "run",
+             "--with",
+             "mcp[cli]",
+             "mcp",
+             "run",
+             "src/chromaDB.py"
+         ]
+       }
+     }
+ }

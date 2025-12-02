@@ -1,0 +1,37 @@
+Python Basics:
+- Interpreted, high-level programming language
+- Dynamic typing and automatic memory management
+- Supports multiple paradigms: procedural, object-oriented, functional
+
+Key Features:
+- Simple syntax and readability
+- Extensive standard library
+- Cross-platform compatibility
+
+Data Types:
+- Numbers: int, float, complex
+- Sequences: list, tuple, range
+- Text: str
+- Mappings: dict
+- Sets: set, frozenset
+- Booleans: True, False
+
+Control Structures:
+- if/elif/else statements
+- for and while loops
+- try/except/finally for exception handling
+
+Functions:
+- Defined with def keyword
+- Support default arguments, *args, **kwargs
+- Lambda functions for anonymous functions
+
+Object-Oriented Programming:
+- Classes and objects
+- Inheritance, polymorphism, encapsulation
+- Special methods like __init__, __str__
+
+Modules and Packages:
+- import statements
+- Standard library modules like os, sys, json
+- Third-party packages via pip
